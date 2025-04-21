@@ -1,120 +1,117 @@
 # .py file for github
-streamlit_code = '''
+# Create a streamlit app file
+streamlit_code = """
 import streamlit as st
 import pandas as pd
+import numpy as np
+from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler
 import plotly.express as px
-import os
 
-st.set_page_config(page_title="Bank Dashboard", layout="wide")
-st.title('Bank Data Dashboard (Imputed Ages)')
+# Set page config
+st.set_page_config(page_title="Bank Data Analysis Dashboard", layout="wide")
 
-# Add error handling for data loading
-try:
-    # Check if file exists
-    if not os.path.exists('bank_data_knn_imputed.csv'):
-        st.error('Error: bank_data_knn_imputed.csv not found. Please ensure the file is in the same directory as the script.')
-        st.stop()
-    
-    # Load the data with error handling
-    try:
-        df = pd.read_csv('bank_data_knn_imputed.csv')
-        bankdataimputed = df
-    except Exception as e:
-        st.error(f'Error loading data: {str(e)}')
-        st.stop()
+# Title
+st.title("Bank Data Analysis Dashboard")
 
-    # --- 1. Scatterplot with Error Handling ---
-    st.header('1. Scatterplot: Age vs. Numeric Column')
+# File upload
+uploaded_file = st.file_uploader("Upload your bank data CSV file", type="csv")
+
+if uploaded_file is not None:
+    # Load data
+    @st.cache_data
+    def load_data(file):
+        return pd.read_csv(file, low_memory=False)
     
-    # Get numeric columns
-    numeric_cols = bankdataimputed.select_dtypes(include=['int64', 'float64']).columns.tolist()
-    y_options = [col for col in numeric_cols if col not in ['demog_age', 'demog_age_imputed']]
+    bank_data = load_data(uploaded_file)
     
-    if not y_options:
-        st.warning('No numeric columns found for comparison.')
-    else:
-        y_axis = st.selectbox('Select Y-axis (numeric column):', y_options, key='scatter_y')
+    # Sidebar for operations
+    st.sidebar.header("Data Processing Options")
+    
+    # KNN Imputation section
+    st.sidebar.subheader("KNN Imputation")
+    perform_imputation = st.sidebar.checkbox("Perform KNN Imputation")
+    
+    if perform_imputation:
+        sample_size = st.sidebar.slider("Sample size for KNN fitting", 1000, 10000, 5000)
+        n_neighbors = st.sidebar.slider("Number of neighbors (k)", 1, 10, 5)
         
-        try:
-            fig1 = px.scatter(bankdataimputed, x='demog_age_imputed', y=y_axis,
-                            title=f'Scatterplot: Age vs. {y_axis}',
-                            labels={'demog_age_imputed': 'Imputed Age', y_axis: y_axis})
-            st.plotly_chart(fig1, use_container_width=True)
-        except Exception as e:
-            st.error(f'Error creating scatter plot: {str(e)}')
-
-    # --- 2. Categorical Comparison ---
-    st.header('2. Compare Categorical Columns')
+        # Data processing
+        features = ['demog_inc', 'demog_homeval', 'demog_age']
+        
+        # Convert to numeric and handle age flags
+        bank_data['age_flag'] = (bank_data['demog_age'] <= 0) | (bank_data['demog_age'].isna())
+        bank_data['demog_age'] = bank_data['demog_age'].where(bank_data['demog_age'] > 0, np.nan)
+        
+        for col in features:
+            bank_data[col] = pd.to_numeric(bank_data[col], errors='coerce')
+        
+        # Perform KNN imputation
+        sample = bank_data[features].dropna().sample(n=sample_size, random_state=42)
+        scaler = StandardScaler()
+        sample_scaled = scaler.fit_transform(sample)
+        
+        imputer = KNNImputer(n_neighbors=n_neighbors)
+        imputer.fit(sample_scaled)
+        
+        full_scaled = scaler.transform(bank_data[features])
+        imputed_scaled = imputer.transform(full_scaled)
+        imputed = scaler.inverse_transform(imputed_scaled)
+        
+        bank_data['demog_age_imputed'] = imputed[:, features.index('demog_age')]
     
-    # Get categorical columns (including object and category dtypes)
-    categorical_cols = bankdataimputed.select_dtypes(include=['object', 'category']).columns.tolist()
+    # Display data overview
+    st.header("Data Overview")
+    st.write("First few rows of the dataset:")
+    st.dataframe(bank_data.head())
     
-    if len(categorical_cols) < 2:
-        st.warning('Not enough categorical columns for comparison.')
-    else:
-        cat1 = st.selectbox('Select first categorical column:', categorical_cols, key='cat1')
-        cat2 = st.selectbox('Select second categorical column:', 
-                           [c for c in categorical_cols if c != cat1], key='cat2')
-        
-        try:
-            # Create cross-tabulation
-            cross_tab = pd.crosstab(bankdataimputed[cat1], bankdataimputed[cat2])
-            st.write('Cross-tabulation table:')
-            st.dataframe(cross_tab)
-            
-            # Create bar plot
-            fig2 = px.bar(cross_tab, barmode='group',
-                         title=f'Comparison: {cat1} vs {cat2}')
-            st.plotly_chart(fig2, use_container_width=True)
-        except Exception as e:
-            st.error(f'Error creating categorical comparison: {str(e)}')
-
-    # --- 3. Interactive Table with Filters ---
-    st.header('3. Table: Filter and Compare')
+    # Basic statistics
+    st.header("Basic Statistics")
+    col1, col2 = st.columns(2)
     
-    try:
-        # Select columns for filtering
-        cat_col = st.selectbox('Select a categorical column for filtering:', 
-                             categorical_cols, key='table_cat')
-        num_col = st.selectbox('Select a numeric column for slider:', 
-                             y_options, key='table_num')
+    with col1:
+        st.subheader("Data Shape")
+        st.write(f"Rows: {bank_data.shape[0]}")
+        st.write(f"Columns: {bank_data.shape[1]}")
+    
+    with col2:
+        st.subheader("Missing Values")
+        st.write(bank_data.isnull().sum())
+    
+    # Visualizations
+    st.header("Visualizations")
+    
+    # Age distribution
+    if perform_imputation:
+        fig_age = px.histogram(bank_data, 
+                             x="demog_age_imputed",
+                             title="Distribution of Imputed Ages",
+                             labels={"demog_age_imputed": "Age"})
+        st.plotly_chart(fig_age)
+    
+    # Income vs Home Value scatter plot
+    fig_scatter = px.scatter(bank_data,
+                           x="demog_inc",
+                           y="demog_homeval",
+                           title="Income vs Home Value",
+                           labels={"demog_inc": "Income",
+                                  "demog_homeval": "Home Value"})
+    st.plotly_chart(fig_scatter)
+    
+    # Download processed data
+    if st.button("Download Processed Data"):
+        csv = bank_data.to_csv(index=False)
+        st.download_button(
+            label="Download CSV",
+            data=csv,
+            file_name="processed_bank_data.csv",
+            mime="text/csv"
+        )
 
-        # Create slider for numeric filtering
-        min_val = float(bankdataimputed[num_col].min())
-        max_val = float(bankdataimputed[num_col].max())
-        val_range = st.slider(f'Select range for {num_col}', 
-                            min_value=min_val, max_value=max_val, 
-                            value=(min_val, max_val))
+"""
 
-        # Filter and display data
-        filtered = bankdataimputed[
-            (bankdataimputed[num_col] >= val_range[0]) & 
-            (bankdataimputed[num_col] <= val_range[1])
-        ]
-
-        # Create summary statistics
-        summary = filtered.groupby(cat_col)[num_col].agg([
-            'count', 'mean', 'min', 'max'
-        ]).reset_index()
-        
-        st.write('Summary Table:')
-        st.dataframe(summary)
-        
-        # Add a count visualization
-        fig3 = px.bar(summary, x=cat_col, y='count',
-                     title=f'Count by {cat_col} (Filtered by {num_col})')
-        st.plotly_chart(fig3, use_container_width=True)
-        
-    except Exception as e:
-        st.error(f'Error in interactive table section: {str(e)}')
-
-except Exception as e:
-    st.error(f'Unexpected error: {str(e)}')
-    st.write('Please check if all required files and dependencies are available.')
-'''
-
-# Save the updated dashboard code
+# Save the streamlit app
 with open('bank_dashboard.py', 'w') as f:
     f.write(streamlit_code)
 
-print('Created updated bank_dashboard.py with error handling and improved visualizations.')
+print("Created bank_dashboard.py with Streamlit dashboard code")
