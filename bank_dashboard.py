@@ -1,137 +1,66 @@
-# Create streamlit dashboard with 3 interactive visualizations
+# .py file for github
 streamlit_code = '''
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np
 
-# Basic page config
-st.set_page_config(page_title="Bank Analysis", layout="wide")
+# Load the imputed data
+df = pd.read_csv('bank_data_knn_imputed.csv')
 
-# Load data
-try:
-    df = pd.read_csv('bank_data.csv')
-    # Convert columns to numeric
-    df['demog_homeval'] = pd.to_numeric(df['demog_homeval'], errors='coerce')
-    df['demog_inc'] = pd.to_numeric(df['demog_inc'], errors='coerce')
-    df['demog_age'] = pd.to_numeric(df['demog_age'], errors='coerce')
-except Exception as e:
-    st.error(f"Error loading data: {e}")
-    st.stop()
+# Rename for convenience
+bankdataimputed = df
 
-# Title
-st.title('Bank Customer Analysis')
+st.set_page_config(page_title="Bank Dashboard", layout="wide")
+st.title('Bank Data Dashboard (Imputed Ages)')
 
-# Create three columns for better layout
-col1, col2 = st.columns(2)
+# --- 1. Scatterplot: Age vs. Selectable Numeric Column ---
+st.header('1. Scatterplot: Age vs. Numeric Column')
+numeric_cols = bankdataimputed.select_dtypes(include='number').columns.tolist()
+# Remove age from y options
+y_options = [col for col in numeric_cols if col not in ['demog_age', 'demog_age_imputed']]
+y_axis = st.selectbox('Select Y-axis (numeric column):', y_options, key='scatter_y')
 
-# Visualization 1: Age Distribution with Income Filter
-with col1:
-    st.subheader('Customer Age Distribution')
-    
-    # Income range slider
-    income_range = st.slider(
-        'Filter by Income Range ($)',
-        min_value=float(df['demog_inc'].min()),
-        max_value=float(df['demog_inc'].max()),
-        value=(float(df['demog_inc'].min()), float(df['demog_inc'].max()))
-    )
-    
-    # Filter data based on income range
-    filtered_df = df[
-        (df['demog_inc'] >= income_range[0]) & 
-        (df['demog_inc'] <= income_range[1])
-    ]
-    
-    age_hist = px.histogram(
-        filtered_df,
-        x='demog_age',
-        title='Age Distribution by Income Range',
-        labels={'demog_age': 'Age', 'count': 'Number of Customers'}
-    )
-    st.plotly_chart(age_hist, use_container_width=True)
+fig1 = px.scatter(bankdataimputed, x='demog_age_imputed', y=y_axis,
+                  title='Scatterplot: Age vs. ' + y_axis,
+                  labels={'demog_age_imputed': 'Imputed Age', y_axis: y_axis})
+st.plotly_chart(fig1, use_container_width=True)
 
-# Visualization 2: Income vs Home Value with Age Filter
-with col2:
-    st.subheader('Income vs Home Value')
-    
-    # Age group dropdown
-    age_ranges = ['All'] + [f'{i}-{i+10}' for i in range(20, 71, 10)] + ['70+']
-    selected_age = st.selectbox('Select Age Range', age_ranges)
-    
-    # Filter data based on age selection
-    if selected_age != 'All':
-        if selected_age == '70+':
-            age_filtered = df[df['demog_age'] >= 70]
-        else:
-            age_min, age_max = map(int, selected_age.split('-'))
-            age_filtered = df[
-                (df['demog_age'] >= age_min) & 
-                (df['demog_age'] < age_max)
-            ]
-    else:
-        age_filtered = df
-    
-    scatter = px.scatter(
-        age_filtered,
-        x='demog_inc',
-        y='demog_homeval',
-        title=f'Income vs Home Value (Age: {selected_age})',
-        labels={
-            'demog_inc': 'Income ($)',
-            'demog_homeval': 'Home Value ($)'
-        }
-    )
-    st.plotly_chart(scatter, use_container_width=True)
+# --- 2. Categorical Comparison ---
+st.header('2. Compare Categorical Columns')
+categorical_cols = bankdataimputed.select_dtypes(include='object').columns.tolist()
+if len(categorical_cols) < 2:
+    st.warning('Not enough categorical columns for comparison.')
+else:
+    cat1 = st.selectbox('Select first categorical column:', categorical_cols, key='cat1')
+    cat2 = st.selectbox('Select second categorical column:', [c for c in categorical_cols if c != cat1], key='cat2')
+    # Countplot (bar chart) of their cross-tabulation
+    cross_tab = pd.crosstab(bankdataimputed[cat1], bankdataimputed[cat2])
+    st.write('Cross-tabulation table:')
+    st.dataframe(cross_tab)
+    fig2 = px.bar(cross_tab, barmode='group', title=f'{cat1} vs {cat2}')
+    st.plotly_chart(fig2, use_container_width=True)
 
-# Visualization 3: RFM Analysis
-st.subheader('RFM Metrics Analysis')
+# --- 3. Table with Sliders: Compare Categorical and Numerical Columns ---
+st.header('3. Table: Filter and Compare')
+# Pick a categorical and a numeric column
+cat_col = st.selectbox('Select a categorical column for filtering:', categorical_cols, key='table_cat')
+num_col = st.selectbox('Select a numeric column for slider:', y_options, key='table_num')
 
-# Get RFM columns
-rfm_cols = [col for col in df.columns if col.startswith('rfm')]
+# Get min/max for slider
+min_val = float(bankdataimputed[num_col].min())
+max_val = float(bankdataimputed[num_col].max())
+val_range = st.slider('Select value range for ' + num_col, min_value=min_val, max_value=max_val, value=(min_val, max_val))
 
-# Create two columns for controls and visualization
-control_col, viz_col = st.columns([1, 3])
+# Filtered table
+filtered = bankdataimputed[(bankdataimputed[num_col] >= val_range[0]) & (bankdataimputed[num_col] <= val_range[1])]
 
-with control_col:
-    # Metric selection dropdown
-    selected_metric = st.selectbox(
-        'Select RFM Metric',
-        options=rfm_cols,
-        key='rfm_select'
-    )
-    
-    # Number of bins slider
-    n_bins = st.slider('Number of Bins', 5, 20, 10)
-
-with viz_col:
-    # Create distribution plot
-    rfm_dist = px.histogram(
-        df,
-        x=selected_metric,
-        nbins=n_bins,
-        title=f'Distribution of {selected_metric}',
-        labels={selected_metric: 'Metric Value', 'count': 'Number of Customers'}
-    )
-    
-    # Add mean line
-    rfm_dist.add_vline(
-        x=df[selected_metric].mean(),
-        line_dash="dash",
-        line_color="red",
-        annotation_text="Mean"
-    )
-    
-    st.plotly_chart(rfm_dist, use_container_width=True)
-
-# Add a data summary section
-st.markdown("---")
-st.subheader("Data Summary")
-st.write(f"Total number of customers: {len(df):,}")
+# Show groupby summary
+summary = filtered.groupby(cat_col)[num_col].agg(['count', 'mean', 'min', 'max']).reset_index()
+st.write('Summary Table:')
+st.dataframe(summary)
 '''
 
-# Save the dashboard
 with open('bank_dashboard.py', 'w') as f:
     f.write(streamlit_code)
 
-print("Created dashboard with 3 interactive visualizations:")
+print('Created new bank_dashboard.py with interactive visualizations and table.')
