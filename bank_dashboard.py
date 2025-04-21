@@ -1,5 +1,4 @@
-# .py file for github
-# Create a streamlit app file
+# streamlit
 streamlit_code = """
 import streamlit as st
 import pandas as pd
