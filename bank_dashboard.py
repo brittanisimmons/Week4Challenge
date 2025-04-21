@@ -44,6 +44,3 @@ st.pyplot(fig3)
 
 st.markdown('---')
 st.write('Use the age slider above to filter the data and see how relationships change!')
-
-
-streamlit run bank_dashboard.py  
