@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 
 # Load data (assume the cleaned CSV is available)
-df = pd.read_csv('bank01 (1).csv')
+df = pd.read_csv('bank_data.csv')
 
 # Clean columns for numeric analysis
 df['demog_homeval'] = pd.to_numeric(df['demog_homeval'], errors='coerce')
