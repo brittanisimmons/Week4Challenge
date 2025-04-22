@@ -193,7 +193,6 @@ with summary_col1:
     st.metric("Total Customers", f"{len(df):,}")
 with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
-"""
 
 st.markdown("### Recommendation")
 st.markdown("""
