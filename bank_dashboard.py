@@ -191,7 +191,7 @@ with summary_col2:
 """
 
 # Add recommendation section  
-st.markdown("### Recommendation")  # Using markdown for the header  
+st.markdown("Recommendation")
 st.markdown(  
     "Based on our findings, we can see that some of the RF metrics are correlated to each other. "  
     "If using a linear model such as logistic regression for prediction, it is recommended to remove "  
