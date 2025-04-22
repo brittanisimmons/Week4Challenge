@@ -188,8 +188,6 @@ with summary_col1:
     st.metric("Total Customers", f"{len(df):,}")
 with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
-with summary_col3:
-    st.metric("Target Rate", f"{df['int_tgt'].mean():.1%}")
 """
 
 # Save the fixed dashboard
