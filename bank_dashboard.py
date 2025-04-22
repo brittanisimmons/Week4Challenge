@@ -1,5 +1,4 @@
 # streamlit
-streamlit
 fixed_code = """
 import streamlit as st
 import pandas as pd
