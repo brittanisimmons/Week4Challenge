@@ -199,7 +199,7 @@ st.markdown("""
 **Summary & Recommendation**  
   
 Based on our findings, we can see that some of the RF metrics are correlated to each other. If using a linear model such as logistic regression for prediction, it is recommended to remove these columns to avoid the problem of multicollinearity. Multicollinearity can inflate standard errors and make coefficient estimates unstable or misleading.  
-""") 
+""")
 
 # Save the fixed dashboard
 with open('bank_dashboard.py', 'w') as f:
