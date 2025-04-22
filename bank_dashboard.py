@@ -1,4 +1,4 @@
-# streamlit
+# streamline
 fixed_code = """
 import streamlit as st
 import pandas as pd
@@ -20,7 +20,7 @@ except Exception as e:
     st.stop()
 
 # Title
-st.title('Bank Customer Analysis')
+st.title('Bank Data Dashboard')
 
 # Create two columns for better layout
 col1, col2 = st.columns(2)
@@ -32,7 +32,7 @@ with col1:
     # Income range slider
     income_range = st.slider(
         'Filter by Income Range ($)',
-        min_value=float(df['demog_inc'].min()),
+        min_value=float(df['demog_inc'].min(2496)),
         max_value=float(df['demog_inc'].max()),
         value=(float(df['demog_inc'].min()), float(df['demog_inc'].max()))
     )
@@ -85,10 +85,10 @@ with col2:
     st.plotly_chart(scatter, use_container_width=True)
 
 # Visualization 3: RFM Analysis
-st.subheader('RFM Metrics Analysis')
+st.subheader('RFM Analysis')
 
 # Get RFM columns
-rfm_cols = [col for col in df.columns if col.startswith('rfm')]
+rfm_cols = [col for col in df.columns if any(col.startswith(f'rfm{i}') for i in range(2, 13))]
 
 # Create two columns for controls and visualization
 control_col, viz_col = st.columns([1, 3])
@@ -180,28 +180,3 @@ with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
 
 print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")
-
-# Remove rfm1 from the RFM metrics dropdown logic
-import re
-
-# Find the RFM metrics dropdown and modify the options to exclude rfm1
-pattern = r"(selected_metric\s*=\s*st\.selectbox\(\s*['\"]Select RFM Metric['\"],\s*options=)([\w\W]+?)(,\s*key=['\"]rfm_select['\"])")
-
-def remove_rfm1_from_options(match):
-    options_code = match.group(2)
-    # Replace rfm1 if it's in a list comprehension or list
-    options_code = re.sub(r"\[([^\]]*)\]", lambda m: '[' + ','.join([x for x in m.group(1).split(',') if 'rfm1' not in x]) + ']', options_code)
-    options_code = options_code.replace("'rfm1',", "")
-    options_code = options_code.replace('"rfm1",', "")
-    options_code = options_code.replace("'rfm1'", "")
-    options_code = options_code.replace('"rfm1"', "")
-    return match.group(1) + options_code + match.group(3)
-
-# Substitute in the code
-new_code = re.sub(pattern, remove_rfm1_from_options, code)
-
-# Save the modified code to bank_dashboard.py
-with open('bank_dashboard.py', 'w', encoding='utf-8') as f:
-    f.write(new_code)
-
-print("rfm1 has been removed from the RFM metrics dropdown in bank_dashboard.py")
