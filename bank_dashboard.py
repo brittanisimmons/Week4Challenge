@@ -87,23 +87,41 @@ with col2:
 
 st.subheader('Compare Two RFM Metrics')  
   
-# Dropdowns for selecting two RFM metrics  
-col1, col2 = st.columns(2)  
-with col1:  
-    rfm_x = st.selectbox('Select X-axis RFM Metric', rfm_cols, key='rfm_x')  
-with col2:  
-    rfm_y = st.selectbox('Select Y-axis RFM Metric', [col for col in rfm_cols if col != rfm_x], key='rfm_y')  
-  
-# Scatter plot comparing the two selected RFM metrics  
-fig = px.scatter(  
-    df,  
-    x=rfm_x,  
-    y=rfm_y,  
-    title=f'Comparison of {rfm_x} vs {rfm_y}',  
-    labels={rfm_x: rfm_x, rfm_y: rfm_y}  
-)  
-st.plotly_chart(fig, use_container_width=True)  
+# Get RFM columns (rfm2 to rfm12 only)
+rfm_cols = [col for col in df.columns if col.startswith('rfm') and col[3:].isdigit() and 2 <= int(col[3:]) <= 12]
 
+# Create two columns for RFM metric selection
+st.subheader('Compare Two RFM Metrics')
+col1, col2 = st.columns(2)
+
+with col1:
+    rfm_x = st.selectbox('Select X-axis RFM Metric', rfm_cols, key='rfm_x')
+with col2:
+    # Remove the selected X metric from Y options to prevent selecting the same metric
+    rfm_y_options = [col for col in rfm_cols if col != rfm_x]
+    rfm_y = st.selectbox('Select Y-axis RFM Metric', rfm_y_options, key='rfm_y')
+
+# Create scatter plot comparing the two RFM metrics
+fig = px.scatter(
+    df,
+    x=rfm_x,
+    y=rfm_y,
+    title=f'Comparison of {rfm_x} vs {rfm_y}',
+    labels={rfm_x: rfm_x, rfm_y: rfm_y}
+)
+
+# Add a trend line
+fig.add_traces(px.scatter(df, x=rfm_x, y=rfm_y, trendline="ols").data)
+
+# Display the plot
+st.plotly_chart(fig, use_container_width=True)
+"""
+
+# Save the complete updated code
+with open('bank_dashboard.py', 'w', encoding='utf-8') as f:
+    f.write(code.replace("# RFM Analysis section", new_rfm_code))
+
+print("Updated bank_dashboard.py with fixed RFM comparison code")
 # Visualization 4: Target Analysis
 st.subheader('Target Analysis')
 
