@@ -84,45 +84,24 @@ with col2:
     )
     st.plotly_chart(scatter, use_container_width=True)
 
-# Visualization 3: RFM Analysis
-st.subheader('RFM Analysis')
-
-# Get RFM columns
-rfm_cols = [col for col in df.columns if any(col.startswith(f'rfm{i}') for i in range(2, 13))]
-
-# Create two columns for controls and visualization
-control_col, viz_col = st.columns([1, 3])
-
-with control_col:
-    # Metric selection dropdown
-    selected_metric = st.selectbox(
-        'Select RFM Metric',
-        options=rfm_cols,
-        key='rfm_select'
-    )
-    
-    # Number of bins slider
-    n_bins = st.slider('Number of Bins', 5, 20, 10)
-
-with viz_col:
-    # Create distribution plot
-    rfm_dist = px.histogram(
-        df,
-        x=selected_metric,
-        nbins=n_bins,
-        title=f'Distribution of {selected_metric}',
-        labels={selected_metric: 'Metric Value', 'count': 'Number of Customers'}
-    )
-    
-    # Add mean line
-    rfm_dist.add_vline(
-        x=df[selected_metric].mean(),
-        line_dash="dash",
-        line_color="red",
-        annotation_text="Mean"
-    )
-    
-    st.plotly_chart(rfm_dist, use_container_width=True)
+st.subheader('Compare Two RFM Metrics')  
+  
+# Dropdowns for selecting two RFM metrics  
+col1, col2 = st.columns(2)  
+with col1:  
+    rfm_x = st.selectbox('Select X-axis RFM Metric', rfm_cols, key='rfm_x')  
+with col2:  
+    rfm_y = st.selectbox('Select Y-axis RFM Metric', [col for col in rfm_cols if col != rfm_x], key='rfm_y')  
+  
+# Scatter plot comparing the two selected RFM metrics  
+fig = px.scatter(  
+    df,  
+    x=rfm_x,  
+    y=rfm_y,  
+    title=f'Comparison of {rfm_x} vs {rfm_y}',  
+    labels={rfm_x: rfm_x, rfm_y: rfm_y}  
+)  
+st.plotly_chart(fig, use_container_width=True)  
 
 # Visualization 4: Target Analysis
 st.subheader('Target Analysis')
