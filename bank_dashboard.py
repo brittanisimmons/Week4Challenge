@@ -199,6 +199,6 @@ st.markdown("### Recommendation\n\n- Some RF metrics are correlated. When using 
 ") 
 
 with open('bank_dashboard.py', 'w') as f:
-    f.write(fixed_code)"""
+    f.write(fixed_code)
 
-print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")
+print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")"""
