@@ -180,3 +180,28 @@ with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
 
 print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")
+
+# Remove rfm1 from the RFM metrics dropdown logic
+import re
+
+# Find the RFM metrics dropdown and modify the options to exclude rfm1
+pattern = r"(selected_metric\s*=\s*st\.selectbox\(\s*['\"]Select RFM Metric['\"],\s*options=)([\w\W]+?)(,\s*key=['\"]rfm_select['\"])")
+
+def remove_rfm1_from_options(match):
+    options_code = match.group(2)
+    # Replace rfm1 if it's in a list comprehension or list
+    options_code = re.sub(r"\[([^\]]*)\]", lambda m: '[' + ','.join([x for x in m.group(1).split(',') if 'rfm1' not in x]) + ']', options_code)
+    options_code = options_code.replace("'rfm1',", "")
+    options_code = options_code.replace('"rfm1",', "")
+    options_code = options_code.replace("'rfm1'", "")
+    options_code = options_code.replace('"rfm1"', "")
+    return match.group(1) + options_code + match.group(3)
+
+# Substitute in the code
+new_code = re.sub(pattern, remove_rfm1_from_options, code)
+
+# Save the modified code to bank_dashboard.py
+with open('bank_dashboard.py', 'w', encoding='utf-8') as f:
+    f.write(new_code)
+
+print("rfm1 has been removed from the RFM metrics dropdown in bank_dashboard.py")
