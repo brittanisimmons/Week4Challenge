@@ -1,116 +1,137 @@
 # streamlit
-streamlit_code = """
+streamlit_code = '''
 import streamlit as st
 import pandas as pd
-import numpy as np
-from sklearn.impute import KNNImputer
-from sklearn.preprocessing import StandardScaler
 import plotly.express as px
+import numpy as np
 
-# Set page config
-st.set_page_config(page_title="Bank Data Analysis Dashboard", layout="wide")
+# Basic page config
+st.set_page_config(page_title="Bank Analysis", layout="wide")
+
+# Load data
+try:
+    bankdataimputed = pd.read_csv('bank_data_knn_imputed.csv')
+    # Convert columns to numeric
+   bankdataimputed['demog_homeval'] = pd.to_numeric(bankdataimputed['demog_homeval'], errors='coerce')
+    bankdataimputed['demog_inc'] = pd.to_numeric(df['demog_inc'], errors='coerce')
+    bankdataimputed['demog_age'] = pd.to_numeric(df['demog_age'], errors='coerce')
+except Exception as e:
+    st.error(f"Error loading data: {e}")
+    st.stop()
 
 # Title
-st.title("Bank Data Analysis Dashboard")
+st.title('Bank Customer Analysis')
 
-# File upload
-uploaded_file = st.file_uploader("Upload your bank data CSV file", type="csv")
+# Create three columns for better layout
+col1, col2 = st.columns(2)
 
-if uploaded_file is not None:
-    # Load data
-    @st.cache_data
-    def load_data(file):
-        return pd.read_csv(file, low_memory=False)
+# Visualization 1: Age Distribution with Income Filter
+with col1:
+    st.subheader('Customer Age Distribution')
     
-    bank_data = load_data(uploaded_file)
+    # Income range slider
+    income_range = st.slider(
+        'Filter by Income Range ($)',
+        min_value=float(df['demog_inc'].min()),
+        max_value=float(df['demog_inc'].max()),
+        value=(float(bankdataimputed['demog_inc'].min()), float(bankdataimputed['demog_inc'].max()))
+    )
     
-    # Sidebar for operations
-    st.sidebar.header("Data Processing Options")
+    # Filter data based on income range
+    filtered_bankdataimputed = bankdataimputed[
+        (bankdataimputed['demog_inc'] >= income_range[0]) & 
+        (bankdataimputed['demog_inc'] <= income_range[1])
+    ]
     
-    # KNN Imputation section
-    st.sidebar.subheader("KNN Imputation")
-    perform_imputation = st.sidebar.checkbox("Perform KNN Imputation")
-    
-    if perform_imputation:
-        sample_size = st.sidebar.slider("Sample size for KNN fitting", 1000, 10000, 5000)
-        n_neighbors = st.sidebar.slider("Number of neighbors (k)", 1, 10, 5)
-        
-        # Data processing
-        features = ['demog_inc', 'demog_homeval', 'demog_age']
-        
-        # Convert to numeric and handle age flags
-        bank_data['age_flag'] = (bank_data['demog_age'] <= 0) | (bank_data['demog_age'].isna())
-        bank_data['demog_age'] = bank_data['demog_age'].where(bank_data['demog_age'] > 0, np.nan)
-        
-        for col in features:
-            bank_data[col] = pd.to_numeric(bank_data[col], errors='coerce')
-        
-        # Perform KNN imputation
-        sample = bank_data[features].dropna().sample(n=sample_size, random_state=42)
-        scaler = StandardScaler()
-        sample_scaled = scaler.fit_transform(sample)
-        
-        imputer = KNNImputer(n_neighbors=n_neighbors)
-        imputer.fit(sample_scaled)
-        
-        full_scaled = scaler.transform(bank_data[features])
-        imputed_scaled = imputer.transform(full_scaled)
-        imputed = scaler.inverse_transform(imputed_scaled)
-        
-        bank_data['demog_age_imputed'] = imputed[:, features.index('demog_age')]
-    
-    # Display data overview
-    st.header("Data Overview")
-    st.write("First few rows of the dataset:")
-    st.dataframe(bank_data.head())
-    
-    # Basic statistics
-    st.header("Basic Statistics")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Data Shape")
-        st.write(f"Rows: {bank_data.shape[0]}")
-        st.write(f"Columns: {bank_data.shape[1]}")
-    
-    with col2:
-        st.subheader("Missing Values")
-        st.write(bank_data.isnull().sum())
-    
-    # Visualizations
-    st.header("Visualizations")
-    
-    # Age distribution
-    if perform_imputation:
-        fig_age = px.histogram(bank_data, 
-                             x="demog_age_imputed",
-                             title="Distribution of Imputed Ages",
-                             labels={"demog_age_imputed": "Age"})
-        st.plotly_chart(fig_age)
-    
-    # Income vs Home Value scatter plot
-    fig_scatter = px.scatter(bank_data,
-                           x="demog_inc",
-                           y="demog_homeval",
-                           title="Income vs Home Value",
-                           labels={"demog_inc": "Income",
-                                  "demog_homeval": "Home Value"})
-    st.plotly_chart(fig_scatter)
-    
-    # Download processed data
-    if st.button("Download Processed Data"):
-        csv = bank_data.to_csv(index=False)
-        st.download_button(
-            label="Download CSV",
-            data=csv,
-            file_name="processed_bank_data.csv",
-            mime="text/csv"
-        )
+    age_hist = px.histogram(
+        filtered_bankdataimputed,
+        x='demog_age',
+        title='Age Distribution by Income Range',
+        labels={'demog_age': 'Age', 'count': 'Number of Customers'}
+    )
+    st.plotly_chart(age_hist, use_container_width=True)
 
-"""
+# Visualization 2: Income vs Home Value with Age Filter
+with col2:
+    st.subheader('Income vs Home Value')
+    
+    # Age group dropdown
+    age_ranges = ['All'] + [f'{i}-{i+10}' for i in range(20, 71, 10)] + ['70+']
+    selected_age = st.selectbox('Select Age Range', age_ranges)
+    
+    # Filter data based on age selection
+    if selected_age != 'All':
+        if selected_age == '70+':
+            age_filtered = bankdataimputed[bankdataimputed['demog_age'] >= 70]
+        else:
+            age_min, age_max = map(int, selected_age.split('-'))
+            age_filtered = bankdataimputed[
+                (bankdataimputed['demog_age'] >= age_min) & 
+                (bankdataimputed['demog_age'] < age_max)
+            ]
+    else:
+        age_filtered = bankdataimputed
+    
+    scatter = px.scatter(
+        age_filtered,
+        x='demog_inc',
+        y='demog_homeval',
+        title=f'Income vs Home Value (Age: {selected_age})',
+        labels={
+            'demog_inc': 'Income ($)',
+            'demog_homeval': 'Home Value ($)'
+        }
+    )
+    st.plotly_chart(scatter, use_container_width=True)
 
-# Save the streamlit app
+# Visualization 3: RFM Analysis
+st.subheader('RFM Metrics Analysis')
+
+# Get RFM columns
+rfm_cols = [col for col in df.columns if col.startswith('rfm')]
+
+# Create two columns for controls and visualization
+control_col, viz_col = st.columns([1, 3])
+
+with control_col:
+    # Metric selection dropdown
+    selected_metric = st.selectbox(
+        'Select RFM Metric',
+        options=rfm_cols,
+        key='rfm_select'
+    )
+    
+    # Number of bins slider
+    n_bins = st.slider('Number of Bins', 5, 20, 10)
+
+with viz_col:
+    # Create distribution plot
+    rfm_dist = px.histogram(
+        bankdataimputed,
+        x=selected_metric,
+        nbins=n_bins,
+        title=f'Distribution of {selected_metric}',
+        labels={selected_metric: 'Metric Value', 'count': 'Number of Customers'}
+    )
+    
+    # Add mean line
+    rfm_dist.add_vline(
+        x=df[selected_metric].mean(),
+        line_dash="dash",
+        line_color="red",
+        annotation_text="Mean"
+    )
+    
+    st.plotly_chart(rfm_dist, use_container_width=True)
+
+# Add a data summary section
+st.markdown("---")
+st.subheader("Data Summary")
+st.write(f"Total number of customers: {len(bankdataimputed):,}")
+'''
+
+# Save the dashboard
 with open('bank_dashboard.py', 'w') as f:
     f.write(streamlit_code)
 
-print("Created bank_dashboard.py with Streamlit dashboard code")
+print("Created dashboard with 3 interactive visualizations:")
