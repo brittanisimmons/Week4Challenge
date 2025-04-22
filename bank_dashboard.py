@@ -190,14 +190,6 @@ with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
 """
 
-# Add recommendation section  
-st.markdown("Recommendation")
-st.markdown(  
-    "Based on our findings, we can see that some of the RF metrics are correlated to each other. "  
-    "If using a linear model such as logistic regression for prediction, it is recommended to remove "  
-    "these columns to avoid the problem of multicollinearity. Multicollinearity can inflate standard "  
-    "errors and make coefficient estimates unstable or misleading.") 
-
 # Save the fixed dashboard
 with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
