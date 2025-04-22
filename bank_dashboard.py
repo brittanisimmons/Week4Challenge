@@ -1,10 +1,4 @@
 # streamlit
-fixed_code = """
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import numpy as np
-
 # Basic page config
 st.set_page_config(page_title="Bank Analysis", layout="wide")
 
@@ -144,60 +138,5 @@ scatter_plot.add_annotation(
 )  
   
 # Display the plot  
-st.plotly_chart(scatter_plot, use_container_width=True)  
+st.plotly_chart_
 
-# Visualization 4: Target Analysis
-st.subheader('Target Analysis')
-
-# Create two columns for the target analysis
-target_col1, target_col2 = st.columns(2)
-
-with target_col1:
-    # Target distribution by home ownership
-    target_ho = px.bar(
-        df.groupby('demog_ho')['int_tgt'].mean().reset_index(),
-        x='demog_ho',
-        y='int_tgt',
-        title='Target Rate by Home Ownership',
-        labels={
-            'demog_ho': 'Home Ownership',
-            'int_tgt': 'Target Rate'
-        }
-    )
-    st.plotly_chart(target_ho, use_container_width=True)
-
-with target_col2:
-    # Target distribution by age groups
-    df['age_group'] = pd.cut(df['demog_age'], 
-                            bins=[0, 30, 40, 50, 60, 70, 100],
-                            labels=['<30', '30-40', '40-50', '50-60', '60-70', '70+'])
-    
-    target_age = px.bar(
-        df.groupby('age_group')['int_tgt'].mean().reset_index(),
-        x='age_group',
-        y='int_tgt',
-        title='Target Rate by Age Group',
-        labels={
-            'age_group': 'Age Group',
-            'int_tgt': 'Target Rate'
-        }
-    )
-    st.plotly_chart(target_age, use_container_width=True)
-
-# Add a data summary section
-st.markdown("---")
-st.subheader("Data Summary")
-summary_col1, summary_col2, summary_col3 = st.columns(3)
-
-with summary_col1:
-    st.metric("Total Customers", f"{len(df):,}")
-with summary_col2:
-    st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
-
-st.markdown("### Recommendation\n\n- Some RF metrics are correlated. When using linear models like logistic regression, remove these to avoid multicollinearity, which can inflate standard errors and lead to unstable or misleading coefficients.  
-") 
-
-with open('bank_dashboard.py', 'w') as f:
-    f.write(fixed_code)
-
-print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")
