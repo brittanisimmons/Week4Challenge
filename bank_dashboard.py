@@ -190,7 +190,7 @@ with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
 """
 
-st.header('test')
+st.write('test')
 
 # Save the fixed dashboard
 with open('bank_dashboard.py', 'w') as f:
