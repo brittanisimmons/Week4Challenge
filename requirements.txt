@@ -1,9 +1,4 @@
-requirements = """
 streamlit
 pandas
 plotly
 numpy
-"""
-
-with open('requirements.txt', 'w') as f:
-    f.write(requirements)
