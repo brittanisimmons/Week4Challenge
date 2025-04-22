@@ -21,6 +21,7 @@ except Exception as e:
 
 # Title
 st.title('Bank Customer Analysis')
+st.subheader('The dashboard shows the correlations between age, income, home value, and different RF metrics of bank customers')
 
 # Create two columns for better layout
 col1, col2 = st.columns(2)
