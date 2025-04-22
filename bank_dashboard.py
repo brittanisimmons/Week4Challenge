@@ -30,11 +30,11 @@ with col1:
     st.subheader('Customer Age Distribution')
     
     # Income range slider
-    income_range = st.slider(
-        'Filter by Income Range ($)',
-        min_value=float(df['demog_inc'].min(2496)),
-        max_value=float(df['demog_inc'].max()),
-        value=(float(df['demog_inc'].min()), float(df['demog_inc'].max()))
+   income_range = st.slider(  
+    'Filter by Income Range ($)',  
+    min_value=2496.0,  # Set minimum to 2496  
+    max_value=float(df['demog_inc'].max()),  
+    value=(2496.0, float(df['demog_inc'].max()))
     )
     
     # Filter data based on income range
