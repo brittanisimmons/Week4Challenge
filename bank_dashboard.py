@@ -197,9 +197,4 @@ with summary_col2:
 with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
 
-st.markdown("### Recommendation")  
-st.markdown(  
-    "- Some RF metrics are correlated. When using linear models like logistic regression, remove these to avoid multicollinearity, which can inflate standard errors and lead to unstable or misleading coefficients."  
-) 
-
 print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")"""
