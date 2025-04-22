@@ -84,45 +84,62 @@ with col2:
     )
     st.plotly_chart(scatter, use_container_width=True)
 
-# Visualization 3: RFM Analysis
-st.subheader('RFM Metrics Analysis')
-
-# Get RFM columns
-rfm_cols = [col for col in df.columns if col.startswith('rfm')]
-
-# Create two columns for controls and visualization
-control_col, viz_col = st.columns([1, 3])
-
-with control_col:
-    # Metric selection dropdown
-    selected_metric = st.selectbox(
-        'Select RFM Metric',
-        options=rfm_cols,
-        key='rfm_select'
-    )
-    
-    # Number of bins slider
-    n_bins = st.slider('Number of Bins', 5, 20, 10)
-
-with viz_col:
-    # Create distribution plot
-    rfm_dist = px.histogram(
-        df,
-        x=selected_metric,
-        nbins=n_bins,
-        title=f'Distribution of {selected_metric}',
-        labels={selected_metric: 'Metric Value', 'count': 'Number of Customers'}
-    )
-    
-    # Add mean line
-    rfm_dist.add_vline(
-        x=df[selected_metric].mean(),
-        line_dash="dash",
-        line_color="red",
-        annotation_text="Mean"
-    )
-    
-    st.plotly_chart(rfm_dist, use_container_width=True)
+# Visualization 3: RFM Analysis  
+st.subheader('RFM Metrics Comparison')  
+  
+# Get RFM columns (excluding rfm1)  
+rfm_cols = [col for col in df.columns if col.startswith('rfm') and col[3:].isdigit() and 2 <= int(col[3:]) <= 12]  
+  
+# Create two columns for selecting metrics  
+col1, col2 = st.columns(2)  
+  
+with col1:  
+    rfm_x = st.selectbox(  
+        'Select First RFM Metric (X-axis)',  
+        options=rfm_cols,  
+        key='rfm_x'  
+    )  
+  
+with col2:  
+    # Remove the selected X metric from Y options  
+    rfm_y_options = [col for col in rfm_cols if col != rfm_x]  
+    rfm_y = st.selectbox(  
+        'Select Second RFM Metric (Y-axis)',  
+        options=rfm_y_options,  
+        key='rfm_y'  
+    )  
+  
+# Calculate correlation coefficient  
+correlation = df[rfm_x].corr(df[rfm_y])  
+  
+# Create scatter plot  
+scatter_plot = px.scatter(  
+    df,  
+    x=rfm_x,  
+    y=rfm_y,  
+    title=f'Correlation between {rfm_x} and {rfm_y}',  
+    labels={  
+        rfm_x: f'{rfm_x} Values',  
+        rfm_y: f'{rfm_y} Values'  
+    },  
+    trendline="ols"  # Add trendline directly in the main plot  
+)  
+  
+# Add correlation coefficient annotation  
+scatter_plot.add_annotation(  
+    text=f'Correlation: {correlation:.2f}',  
+    xref='paper',  
+    yref='paper',  
+    x=0.02,  
+    y=0.98,  
+    showarrow=False,  
+    bgcolor='white',  
+    bordercolor='black',  
+    borderwidth=1  
+)  
+  
+# Display the plot  
+st.plotly_chart(scatter_plot, use_container_width=True)  
 
 # Visualization 4: Target Analysis
 st.subheader('Target Analysis')
