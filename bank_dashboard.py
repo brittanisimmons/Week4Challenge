@@ -195,8 +195,11 @@ with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
 """
 
-st.header('1. Some RF metrics are correlated. When using linear models like logistic regression, remove these to avoid multicollinearity, which can inflate standard errors and lead to unstable or misleading coefficients.')
-# Save the fixed dashboard
+st.markdown("### Recommendation")
+st.markdown("""
+- Some RF metrics are correlated. When using linear models like logistic regression, remove these to avoid multicollinearity, which can inflate standard errors and lead to unstable or misleading coefficients.
+""")
+
 with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
 
