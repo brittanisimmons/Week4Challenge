@@ -194,11 +194,11 @@ with summary_col1:
 with summary_col2:
     st.metric("Average Age", f"{df['demog_age'].mean():.1f}")
 
-st.markdown("""  
+st.markdown(" 
 ### Recommendation  
   
 - Some RF metrics are correlated. When using linear models like logistic regression, remove these to avoid multicollinearity, which can inflate standard errors and lead to unstable or misleading coefficients.  
-""") 
+") 
 
 with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
