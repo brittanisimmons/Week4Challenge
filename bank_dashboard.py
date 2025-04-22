@@ -115,7 +115,6 @@ fig.add_traces(px.scatter(df, x=rfm_x, y=rfm_y, trendline="ols").data)
 
 # Display the plot
 st.plotly_chart(fig, use_container_width=True)
-"""
 
 # Save the complete updated code
 with open('bank_dashboard.py', 'w', encoding='utf-8') as f:
