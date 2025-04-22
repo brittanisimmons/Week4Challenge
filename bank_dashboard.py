@@ -197,7 +197,7 @@ with summary_col2:
 
 def main():
     # insights
-    st.subheader("Recommendation on RF Metrics and Multicollinearity")
+    st.subheader('Recommendation on RF Metrics and Multicollinearity')
     st.write("""
     Based on our findings, we can see that some of the RF metrics are correlated to each other.  
     If using a linear model such as logistic regression for prediction, it is recommended to remove these columns  
