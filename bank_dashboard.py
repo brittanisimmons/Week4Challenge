@@ -1,4 +1,4 @@
-# streamline
+# streamlit
 fixed_code = """
 import streamlit as st
 import pandas as pd
@@ -20,7 +20,7 @@ except Exception as e:
     st.stop()
 
 # Title
-st.title('Bank Data Dashboard')
+st.title('Bank Customer Analysis')
 
 # Create two columns for better layout
 col1, col2 = st.columns(2)
@@ -30,7 +30,6 @@ with col1:
     st.subheader('Customer Age Distribution')
     
     # Income range slider
-   # Income range slider
     income_range = st.slider(
         'Filter by Income Range ($)',
         min_value=float(df['demog_inc'].min()),
@@ -85,42 +84,46 @@ with col2:
     )
     st.plotly_chart(scatter, use_container_width=True)
 
-st.subheader('Compare Two RFM Metrics')  
-  
-# Get RFM columns (rfm2 to rfm12 only)
-rfm_cols = [col for col in df.columns if col.startswith('rfm') and col[3:].isdigit() and 2 <= int(col[3:]) <= 12]
+# Visualization 3: RFM Analysis
+st.subheader('RFM Metrics Analysis')
 
-# Create two columns for RFM metric selection
-st.subheader('Compare Two RFM Metrics')
-col1, col2 = st.columns(2)
+# Get RFM columns
+rfm_cols = [col for col in df.columns if col.startswith('rfm')]
 
-with col1:
-    rfm_x = st.selectbox('Select X-axis RFM Metric', rfm_cols, key='rfm_x')
-with col2:
-    # Remove the selected X metric from Y options to prevent selecting the same metric
-    rfm_y_options = [col for col in rfm_cols if col != rfm_x]
-    rfm_y = st.selectbox('Select Y-axis RFM Metric', rfm_y_options, key='rfm_y')
+# Create two columns for controls and visualization
+control_col, viz_col = st.columns([1, 3])
 
-# Create scatter plot comparing the two RFM metrics
-fig = px.scatter(
-    df,
-    x=rfm_x,
-    y=rfm_y,
-    title=f'Comparison of {rfm_x} vs {rfm_y}',
-    labels={rfm_x: rfm_x, rfm_y: rfm_y}
-)
+with control_col:
+    # Metric selection dropdown
+    selected_metric = st.selectbox(
+        'Select RFM Metric',
+        options=rfm_cols,
+        key='rfm_select'
+    )
+    
+    # Number of bins slider
+    n_bins = st.slider('Number of Bins', 5, 20, 10)
 
-# Add a trend line
-fig.add_traces(px.scatter(df, x=rfm_x, y=rfm_y, trendline="ols").data)
+with viz_col:
+    # Create distribution plot
+    rfm_dist = px.histogram(
+        df,
+        x=selected_metric,
+        nbins=n_bins,
+        title=f'Distribution of {selected_metric}',
+        labels={selected_metric: 'Metric Value', 'count': 'Number of Customers'}
+    )
+    
+    # Add mean line
+    rfm_dist.add_vline(
+        x=df[selected_metric].mean(),
+        line_dash="dash",
+        line_color="red",
+        annotation_text="Mean"
+    )
+    
+    st.plotly_chart(rfm_dist, use_container_width=True)
 
-# Display the plot
-st.plotly_chart(fig, use_container_width=True)
-
-# Save the complete updated code
-with open('bank_dashboard.py', 'w', encoding='utf-8') as f:
-    f.write(code.replace("# RFM Analysis section", new_rfm_code))
-
-print("Updated bank_dashboard.py with fixed RFM comparison code")
 # Visualization 4: Target Analysis
 st.subheader('Target Analysis')
 
@@ -177,3 +180,4 @@ with open('bank_dashboard.py', 'w') as f:
     f.write(fixed_code)
 
 print("Created fixed dashboard with 4 interactive visualizations and summary metrics. Key fixes include:")
+
